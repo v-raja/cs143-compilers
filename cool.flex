@@ -60,7 +60,11 @@ allowed_chars   [\<\=;\(\)\{\}\.\+\-\*/~@\:\,]
 
 "--"            BEGIN(single_line_comment);
 <single_line_comment>{
-  .
+  .+
+  .+\n {
+    curr_lineno++;
+    BEGIN(INITIAL);
+  }
   \n {
     curr_lineno++;
     BEGIN(INITIAL);
@@ -78,9 +82,10 @@ allowed_chars   [\<\=;\(\)\{\}\.\+\-\*/~@\:\,]
     if (nested_comments == 0)
       BEGIN(INITIAL);
   }
-  "*"
   [^\n\*]*
   [^\n\*]*\n curr_lineno++;
+  "*"
+  "*"\n      curr_lineno++;
   <<EOF>>    {
     yylval.error_msg = "EOF in comment";
     BEGIN(INITIAL);
@@ -213,11 +218,11 @@ false {
   }
 }
 
-"<-"            return (ASSIGN);
-"<="            return (LE);
-(\n)            curr_lineno++;
+"<-"              return (ASSIGN);
+"<="              return (LE);
+(\n)              curr_lineno++;
 {whitespace}
-{allowed_chars}      return *yytext;
+{allowed_chars}   return *yytext;
 (.) {
   cool_yylval.error_msg = yytext;
   return (ERROR);
