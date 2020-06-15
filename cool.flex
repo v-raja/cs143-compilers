@@ -47,10 +47,10 @@ int string_size_ok(int len_to_add);
 %}
 
 digit           [0-9]
-id              [a-z][a-zA-Z0-9"_"]+
+id              [a-z][a-zA-Z0-9"_"]*
 type_id         [A-Z][a-zA-Z0-9"_"]*
 whitespace      [ \t\r\v\f]
-allowed_chars   [\<\=;\(\)\{\}\.\+\-\*/~@\:]
+allowed_chars   [\<\=;\(\)\{\}\.\+\-\*/~@\:\,]
 
 %x              comment
 %x              string
@@ -73,16 +73,18 @@ allowed_chars   [\<\=;\(\)\{\}\.\+\-\*/~@\:]
   BEGIN(comment);
 }
 <comment>{
+  "*)"       {
+    nested_comments--;
+    if (nested_comments == 0)
+      BEGIN(INITIAL);
+  }
+  "*"
   [^\n\*]*
   [^\n\*]*\n curr_lineno++;
   <<EOF>>    {
     yylval.error_msg = "EOF in comment";
     BEGIN(INITIAL);
     return (ERROR);
-  }
-  "*)"       {
-    if (nested_comments-- == 0)
-      BEGIN(INITIAL);
   }
 }
 
@@ -212,6 +214,7 @@ false {
 }
 
 "<-"            return (ASSIGN);
+"<="            return (LE);
 (\n)            curr_lineno++;
 {whitespace}
 {allowed_chars}      return *yytext;
